@@ -136,7 +136,7 @@ def read_current(inst: serial.Serial) -> float | None:
         return None
 '''
 
-def read_current(inst: serial.Serial):
+def read_current(inst: serial.Serial) -> (float | None):
     """
     Request a single current reading.
     Returns the value in Amperes (2nd field), or None on parse error.
@@ -241,6 +241,14 @@ def parse_args() -> argparse.Namespace:
                         help="Output filename (without extension). Prompted if omitted.")
     parser.add_argument("--format",  choices=["csv", "h5"], default=None,
                         help="Output format: csv or h5. Prompted if omitted.")
+
+    # ── Time-stability measurement parameters ─────────────────────────
+    parser.add_argument("--angle", type=float, default=4.25,
+                        help="Fixed monochromator angle/position (default: 4.25)")
+    parser.add_argument("--num-points", type=int, default=100,
+                        help="Number of time points N (default: 100)")
+    parser.add_argument("--interval-min", type=float, default=5.0,
+                        help="Interval between points M, in minutes (default: 5)")
     return parser.parse_args()
 
 
@@ -278,138 +286,64 @@ def main() -> None:
     print("  Keithley 6487 RS-232 Current Logger")
     print("=" * 60)
 
-    # Prompt for output details before acquisition starts
+    # ── Time-stability measurement setup ───────────────────────────────
+    angle          = args.angle
+    N_points       = args.num_points
+    M_minutes      = args.interval_min
+    interval_sec   = M_minutes * 60.0
+
     filename, fmt = "test", "csv"
-    import numpy as np
 
-    def generate_values(start=None,
-                        stop=None,
-                        step=None,
-                        fine_ranges=None,
-                        include_coarse=True):
-        """
-        Generate numpy values using:
-        - optional coarse sweep
-        - optional fine-resolution ranges
-
-        Parameters
-        ----------
-        start : float
-            Coarse sweep start.
-        stop : float
-            Coarse sweep stop (inclusive).
-        step : float
-            Coarse spacing.
-        fine_ranges : list of tuples
-            Each tuple:
-                (range_start, range_stop, fine_step)
-
-            Example:
-                [(-10, -9, 0.01),
-                (2, 3, 0.1)]
-
-        include_coarse : bool
-            If True:
-                include coarse sweep.
-            If False:
-                only include fine ranges.
-
-        Returns
-        -------
-        np.ndarray
-        """
-
-        if fine_ranges is None:
-            fine_ranges = []
-
-        values = []
-        
-
-        # -----------------------------
-        # Coarse sweep
-        # -----------------------------
-        if include_coarse:
-            if start is None or stop is None:
-                raise ValueError(
-                    "start and stop must be provided when include_coarse=True"
-                )
-
-            coarse = np.arange(start, stop + step/2, step)
-            values.extend(coarse)
-	
-        # -----------------------------
-        # Fine ranges
-        # -----------------------------
-        for r_start, r_stop, r_step in fine_ranges:
-            fine = np.arange(r_start, r_stop + r_step/2, r_step)
-            values.extend(fine)
-
-        # Remove duplicates and sort
-        arr = np.array(sorted(set(np.round(values, 10))))
-        
-        return arr
-	
-    # =========================================================
-    # EXAMPLES
-    # =========================================================
-
-    # 1. Coarse + fine
-
-    angles = generate_values(
-        start=3.4,
-        stop=3.6,
-        step=0.1,
-        include_coarse=True
-    )
-            #fine_ranges=[
-            #(-15, -11.2, 0.01),
-            #(1.1,1.6,0.01),
-            #(14.0,14.8,0.01)
-        #],
-    
-    #angles = [0,5,10]
-    
-    # 2. Fine scans ONLY
-    """
-    angles = generate_values(
-        fine_ranges=[
-            (-10, -8.9, 0.01),
-            (1.2,1.6,0.01),
-            (11.5, 12.4, 0.01)
-        ],
-        include_coarse=False
-    )
-    """
-    
+    # Output file with the raw per-point statistics (t, mean, std)
+    output_txt = (filename if filename.endswith(".txt") else filename + "_stability.txt")
 
     # Open port and instrument
     inst = open_instrument(CONFIG)
     initialise_instrument(inst)
-    # turn source output on
-    print(angles)
 
-    with open("week_11-thurs-summary.txt", "a") as file:
+    # Move to the fixed angle once, before starting the time series
+    mchrom.goTo(angle)
+    time.sleep(0.3)
 
-        for i in angles:
+    print(f"[INFO] Fixed angle/position: {angle}")
+    print(f"[INFO] Time-stability run: {N_points} points every {M_minutes} min "
+          f"({(N_points - 1) * M_minutes:.1f} min total)")
 
-            mchrom.goTo(i)
-            time.sleep(0.3)
+    t_start = time.time()
+
+    with open(output_txt, "a") as file:
+        file.write("t_min,timestamp,current_mean_A,current_std_A,n_samples\n")
+
+        for point in range(N_points):
+            # Absolute schedule (relative to t_start) avoids accumulated drift
+            # from the time spent acquiring/writing at each point.
+            target_t = point * interval_sec
+            wait_time = target_t - (time.time() - t_start)
+            if wait_time > 0:
+                time.sleep(wait_time)
+
+            t_min = point * M_minutes
+            ts_now = datetime.datetime.now().isoformat(timespec="seconds")
 
             timestamps, values = acquire(inst, CONFIG["num_samples"], CONFIG["delay"])
-	    
+
             if not values:
-                print("[ERROR] No data collected. Nothing saved.")
-                sys.exit(1)
+                print(f"[WARNING] No data collected at t={t_min} min. Skipping point.")
+                continue
 
             arr = np.array(values)
+            mean_val = np.mean(arr)
+            std_val  = np.std(arr)
 
-            string = str(mchrom.Mot.getEPOS()) + "," + str(np.mean(arr)) + "," +  str(np.std(arr)) +"\n"
+            print(f"[INFO] t={t_min:>4} min  mean={mean_val:.6E} A  "
+                  f"std={std_val:.6E} A  ({ts_now})")
 
-            file.write(string)
+            file.write(f"{t_min},{ts_now},{mean_val},{std_val},{len(values)}\n")
             file.flush()
 
     inst.close()
     print("[INFO] Serial port closed.")
+    print(f"[INFO] Stability data saved -> {output_txt}")
 
 
 if __name__ == "__main__":
