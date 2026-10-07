@@ -4,7 +4,8 @@ import traceback
 
 from io                import read_config_file
 from stability import stability
-import squid
+from spectrum import spectrum
+
 
 def acq(config_file):
     print("Starting the acquisition pack...")
@@ -26,7 +27,7 @@ def acq(config_file):
             case 'spectrum':
                 match conf_dict.pop('keithley_model'):
                     case 6487:
-                        squid.main(**conf_dict)
+                        spectrum(**conf_dict)
                     case other:
                         raise RuntimeError(f"keithley_model {other} acquisition isn't currently implemented.")
             case other:
