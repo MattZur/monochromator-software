@@ -10,7 +10,7 @@ import serial
 # ── Instrument constants ──────────────────────────────────────────────────────
 COLUMN_TO_READ = 1          # index of the current in the :READ? reply (as in the original script)
 CURRENT_PROTECTION = 1     # A, :SENS:CURR:PROT
-MAX_PARSE_FAILURES = 20    # consecutive bad replies before giving up
+MAX_PARSE_FAILURES = 2    # consecutive bad replies before giving up
 
 
 class Keithley6487:

@@ -2,9 +2,9 @@ import os
 import sys
 import traceback
 
-from io                import read_config_file
+from packs.core.io                import read_config_file
 from stability import stability
-from spectrum import spectrum
+from packs.acq.acq_utils import spectrum
 
 
 def acq(config_file):
@@ -27,6 +27,7 @@ def acq(config_file):
             case 'spectrum':
                 match conf_dict.pop('keithley_model'):
                     case 6487:
+                        print('runs')
                         spectrum(**conf_dict)
                     case other:
                         raise RuntimeError(f"keithley_model {other} acquisition isn't currently implemented.")
