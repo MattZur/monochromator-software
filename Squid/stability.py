@@ -25,7 +25,7 @@ import datetime
 import time
 from pathlib import Path
 
-from keithley import Keithley6487
+from packs.instr.keithley import Keithley6487
 from src import monochromator_library as mchrom
 
 
@@ -76,5 +76,3 @@ def stability(
         except KeyboardInterrupt:
             print("\n[INFO] Interrupted by user; data collected so far has been kept.")
 
-    print(f"[INFO] Stability data saved -> {out_path}")
-    return out_path
