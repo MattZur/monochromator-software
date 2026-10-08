@@ -26,7 +26,7 @@ import time
 from pathlib import Path
 
 from keithley import Keithley6487
-from src import mchrom_control_code_draft as mchrom
+from src import monochromator_library as mchrom
 
 
 def stability(
