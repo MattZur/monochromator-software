@@ -1,4 +1,4 @@
-##Squid
+## SQUID — Spectroscopy and Quantitative Ultraviolet Intensity Detection
 This has the code controlling the Keithley picoammeter and the monochromator for automated data acquisition. 
 
 First, in command prompt, go to this directory and run 'source setup.sh', this loads up the virtual environment with all the packages needed.
