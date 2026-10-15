@@ -69,7 +69,7 @@ export SQUID_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 export PATH=$SQUID_DIR/bin:$PATH
 
 
-# logo ex. echo "$(<${MULE_DIR}/assets/MULE.txt)"
+echo "$(<${SQUID_DIR}/assets/squid.txt)"
 
 echo "Identified directory: $SQUID_DIR"
 
