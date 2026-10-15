@@ -3,7 +3,7 @@ import time
 from pathlib import Path
 import datetime
 
-from packs.instr.keithley import Keithley6487
+from Squid.lib.readout_instruments.keithley import Keithley6487
 from src import monochromator_library as mchrom
 
 
@@ -34,7 +34,7 @@ def create_angle_array(
     return np.unique(np.round(angles, 10))
 
 
-def spectrum(
+def single_pos_spectrum(
     save_name: str,
     overwrite: bool = False,
     num_samples: int = 1,
@@ -90,7 +90,7 @@ def spectrum(
     return out_path
 
 
-def stability(
+def single_pos_stability(
     save_name: str,
     overwrite: bool = False,
     num_samples: int = 100,
