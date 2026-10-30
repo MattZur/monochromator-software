@@ -73,7 +73,7 @@ MIN_POSITION_MM = -10  # firmware rejects any target below this
 DEFAULT_BAUDRATE = 9600
 DEFAULT_TIMEOUT_S = 2.0          # per-line read timeout
 DEFAULT_BOOT_DELAY_S = 2.0       # Arduino resets on serial open; give it time
-DEFAULT_MOVE_TIMEOUT_S = 60.0    # max time to wait for a move to complete
+DEFAULT_MOVE_TIMEOUT_S = 68.0    # max time to wait for a move to complete - checked by trial
 DEFAULT_IDLE_GAP_S = 0.3         # silence that marks the end of a multi-line reply
 
 REWIND_HINT = (

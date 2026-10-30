@@ -3,8 +3,8 @@ import sys
 import traceback
 
 from packs.core.io                import read_config_file
-from packs.acq.acq_utils import stability
-from packs.acq.acq_utils import spectrum
+from packs.acq.acq_utils import single_pos_stability
+from packs.acq.acq_utils import single_pos_spectrum
 
 
 def acq(config_file):
@@ -21,14 +21,14 @@ def acq(config_file):
             # removing the first two components so that the other arguments are passed correctly
                 match conf_dict.pop('keithley_model'):
                     case 6487:
-                        stability(**conf_dict)
+                        single_pos_stability(**conf_dict)
                     case other:
                         raise RuntimeError(f"keithley_model {other} acquisition isn't currently implemented.")
             case 'spectrum':
                 match conf_dict.pop('keithley_model'):
                     case 6487:
                         print('runs')
-                        spectrum(**conf_dict)
+                        single_pos_spectrum(**conf_dict)
                     case other:
                         raise RuntimeError(f"keithley_model {other} acquisition isn't currently implemented.")
             case other:
