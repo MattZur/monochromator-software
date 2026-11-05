@@ -155,6 +155,9 @@ def goTo(value: float, retries: int = MAX_RETRIES) -> None:
               f"attempt {attempt + 1}/{retries + 1}")
         if attempt < retries:
             reset(hard=attempt > 0)
+        else:
+            Mot.setDPOS(-15)
+            attempt = attempt - 2
 
     raise MonochromatorError(
         f"Could not reach {value} deg after {retries + 1} attempts (at {Mot.getEPOS():.4f}).")
